@@ -14,16 +14,10 @@ package com.amazonaws.services.neptune.propertygraph;
 
 import com.amazonaws.services.neptune.export.LabModeFeature;
 import com.amazonaws.services.neptune.export.LabModeFeatures;
-<<<<<<< HEAD
 import com.amazonaws.services.neptune.propertygraph.schema.GraphElementSchemas;
 import com.amazonaws.services.neptune.propertygraph.schema.LabelSchema;
 import com.amazonaws.services.neptune.propertygraph.schema.PropertySchema;
 import org.apache.tinkerpop.gremlin.process.traversal.Traversal;
-=======
-import com.amazonaws.services.neptune.propertygraph.schema.LabelSchema;
-import com.amazonaws.services.neptune.propertygraph.schema.GraphElementSchemas;
-import com.amazonaws.services.neptune.propertygraph.schema.PropertySchema;
->>>>>>> upstream/master
 import org.apache.tinkerpop.gremlin.process.traversal.dsl.graph.GraphTraversal;
 import org.apache.tinkerpop.gremlin.structure.Element;
 
@@ -34,11 +28,8 @@ import java.util.stream.Stream;
 
 import static org.apache.tinkerpop.gremlin.process.traversal.dsl.graph.__.*;
 
-<<<<<<< HEAD
 public class SpecifiedLabels implements LabelsFilter {
 
-=======
->>>>>>> upstream/master
     private final Collection<Label> labels;
     private final LabelStrategy labelStrategy;
 
@@ -49,7 +40,6 @@ public class SpecifiedLabels implements LabelsFilter {
 
     @Override
     public GraphTraversal<? extends Element, ?> apply(GraphTraversal<? extends Element, ?> traversal, LabModeFeatures labModeFeatures) {
-<<<<<<< HEAD
 
 
         if (labModeFeatures.containsFeature(LabModeFeature.LegacyLabelFiltering)) {
@@ -124,26 +114,6 @@ public class SpecifiedLabels implements LabelsFilter {
 
 
         return t;
-=======
-        List<String> labelList = labels.stream()
-                .flatMap((Function<Label, Stream<String>>) label -> label.label().stream())
-                .collect(Collectors.toList());
-
-        if (labModeFeatures.containsFeature(LabModeFeature.LegacyLabelFiltering)){
-            String firstLabel = labelList.stream().findFirst().orElseThrow(()->new IllegalStateException("No labels specified"));
-            String[] remainingLabels = labelList.stream()
-                    .skip(1)
-                    .collect(Collectors.toList())
-                    .toArray(new String[]{});
-
-            return traversal.hasLabel(firstLabel, remainingLabels);
-        } else {
-            for (String label : labelList) {
-                traversal = traversal.hasLabel(label);
-            }
-            return traversal;
-        }
->>>>>>> upstream/master
     }
 
     @Override
@@ -189,11 +159,7 @@ public class SpecifiedLabels implements LabelsFilter {
     public LabelsFilter union(Collection<Label> others) {
         Collection<Label> results = new ArrayList<>();
         for (Label label : labels) {
-<<<<<<< HEAD
             if (others.contains(label)) {
-=======
-            if (others.contains(label)){
->>>>>>> upstream/master
                 results.add(label);
             }
         }
