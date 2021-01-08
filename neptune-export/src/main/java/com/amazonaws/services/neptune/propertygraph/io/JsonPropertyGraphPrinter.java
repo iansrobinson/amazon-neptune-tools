@@ -20,6 +20,7 @@ import com.fasterxml.jackson.core.JsonGenerator;
 
 import java.io.IOException;
 import java.util.Collection;
+import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 
@@ -109,29 +110,67 @@ public class JsonPropertyGraphPrinter implements PropertyGraphPrinter {
 
         DataType dataType = propertySchema.dataType();
         String formattedKey = propertySchema.nameWithoutDataType();
+        boolean isMultiValue = propertySchema.isMultiValue();
 
-        printProperty(value, dataType, formattedKey);
+        printProperty(value, dataType, formattedKey, isMultiValue);
     }
 
-    private void printProperty(Object value, DataType dataType, String formattedKey) throws IOException {
-        if (isList(value)) {
-            List<?> values = (List<?>) value;
-            if (values.size() > 1) {
-                generator.writeFieldName(formattedKey);
-                generator.writeStartArray();
-                for (Object v : values) {
-                    dataType.printTo(generator, v);
-                }
-                generator.writeEndArray();
-            } else {
-                if (!values.isEmpty()) {
-                    dataType.printTo(generator, formattedKey, values.get(0));
-                }
+    private void printProperty(Object value, DataType dataType, String formattedKey, boolean forceMultiValue) throws IOException {
+
+        if (forceMultiValue) {
+
+            List<?> values = isList(value) ? (List<?>) value : Collections.singletonList(value);
+
+            generator.writeFieldName(formattedKey);
+            generator.writeStartArray();
+            for (Object v : values) {
+                dataType.printTo(generator, v);
             }
+            generator.writeEndArray();
 
         } else {
-            dataType.printTo(generator, formattedKey, value);
+            if (isList(value)) {
+                List<?> values = (List<?>) value;
+                if (values.size() != 1) {
+                    generator.writeFieldName(formattedKey);
+                    generator.writeStartArray();
+                    for (Object v : values) {
+                        dataType.printTo(generator, v);
+                    }
+                    generator.writeEndArray();
+                } else {
+                    dataType.printTo(generator, formattedKey, values.get(0));
+                }
+            } else {
+                dataType.printTo(generator, formattedKey, value);
+            }
         }
+
+
+//        if (isList(value)) {
+//            List<?> values = (List<?>) value;
+////            if (values.size() != 1) {
+////                generator.writeFieldName(formattedKey);
+////                generator.writeStartArray();
+////                for (Object v : values) {
+////                    dataType.printTo(generator, v);
+////                }
+////                generator.writeEndArray();
+////            } else {
+////                dataType.printTo(generator, formattedKey, values.get(0));
+////            }
+//
+//            generator.writeFieldName(formattedKey);
+//            generator.writeStartArray();
+//            for (Object v : values) {
+//                dataType.printTo(generator, v);
+//            }
+//            generator.writeEndArray();
+//
+//
+//        } else {
+//            dataType.printTo(generator, formattedKey, value);
+//        }
     }
 
     @Override
@@ -156,17 +195,17 @@ public class JsonPropertyGraphPrinter implements PropertyGraphPrinter {
         generator.writeStringField("~from", from);
         generator.writeStringField("~to", to);
         if (fromLabels != null) {
-            printProperty(fromLabels, DataType.String, "~fromLabels");
+            printProperty(fromLabels, DataType.String, "~fromLabels", true);
         }
         if (toLabels != null) {
-            printProperty(toLabels, DataType.String, "~toLabels");
+            printProperty(toLabels, DataType.String, "~toLabels", true);
         }
     }
 
     @Override
     public void printNode(String id, List<String> labels) throws IOException {
         generator.writeStringField("~id", id);
-        printProperty(labels, DataType.String, "~label");
+        printProperty(labels, DataType.String, "~label", true);
     }
 
     @Override
