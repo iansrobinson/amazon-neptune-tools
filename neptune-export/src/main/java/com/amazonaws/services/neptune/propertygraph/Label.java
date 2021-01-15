@@ -24,7 +24,6 @@ import java.util.stream.Collectors;
 
 public class Label {
 
-
     public static List<String> fixLabelsIssue(List<String> list) {
         if (list.size() == 1 && list.get(0).contains("::")) {
             List<String> newResults = Arrays.asList(list.get(0).split("::"));
@@ -44,6 +43,7 @@ public class Label {
 
             if (jsonNode.has("~fromLabels")) {
                 JsonNode fromLabelsNode = jsonNode.path("~fromLabels");
+
                 if (fromLabelsNode.isArray()) {
                     ArrayNode fromLabelsArrays = (ArrayNode) fromLabelsNode;
                     fromLabelsArrays.forEach(l -> fromLabels.add(l.textValue()));
@@ -54,6 +54,7 @@ public class Label {
 
             if (jsonNode.has("~toLabels")) {
                 JsonNode toLabelsNode = jsonNode.path("~toLabels");
+
                 if (toLabelsNode.isArray()) {
                     ArrayNode toLabelsArray = (ArrayNode) toLabelsNode;
                     toLabelsArray.forEach(l -> toLabels.add(l.textValue()));
@@ -118,6 +119,7 @@ public class Label {
     private String format(String fromLabels, String label, String toLabels) {
         return String.format("(%s)-%s-(%s)", fromLabels, label, toLabels);
     }
+
 
     private List<String> escapeSemicolons(List<String> list) {
         return list.stream().map(v -> DataType.escapeSeparators(v, ";")).collect(Collectors.toList());

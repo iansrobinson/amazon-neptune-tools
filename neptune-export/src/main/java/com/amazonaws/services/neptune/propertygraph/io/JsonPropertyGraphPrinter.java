@@ -148,7 +148,6 @@ public class JsonPropertyGraphPrinter implements PropertyGraphPrinter {
                 dataType.printTo(generator, formattedKey, value);
             }
         }
-
     }
 
     @Override
