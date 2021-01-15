@@ -19,12 +19,12 @@ import com.amazonaws.services.s3.AmazonS3ClientBuilder;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.ObjectWriter;
+import org.apache.commons.lang.StringUtils;
 
 import java.io.*;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.net.URI;
-import java.net.URL;
 
 import static java.nio.charset.StandardCharsets.UTF_8;
 
@@ -72,9 +72,9 @@ public class JsonResource<T extends Jsonizable> {
             Object o = method.invoke(null, json);
             //noinspection unchecked
             return (T) o;
-        } catch (NoSuchMethodException e){
+        } catch (NoSuchMethodException e) {
             throw new RuntimeException("Jsonizable object must have a static fromJson(JsonNode) method");
-        } catch  ( IllegalAccessException | InvocationTargetException e){
+        } catch (IllegalAccessException | InvocationTargetException e) {
             throw new RuntimeException(e);
         }
     }
@@ -88,44 +88,29 @@ public class JsonResource<T extends Jsonizable> {
     }
 
     private JsonNode readJson() throws IOException {
-        String scheme = resourcePath.getScheme();
 
-        if (scheme == null){
-            return getFromFile();
-        }
+        String scheme = StringUtils.isNotEmpty(resourcePath.getScheme()) ? resourcePath.getScheme() : "file";
 
         switch (scheme) {
             case "https":
-                return getFromHttps();
+                return new ObjectMapper().readTree(resourcePath.toURL());
             case "s3":
-                return getFromS3();
+                S3ObjectInfo s3ObjectInfo = new S3ObjectInfo(resourcePath.toString());
+                AmazonS3 s3 = AmazonS3ClientBuilder.defaultClient();
+                try (InputStream stream = s3.getObject(s3ObjectInfo.bucket(), s3ObjectInfo.key()).getObjectContent()) {
+                    return new ObjectMapper().readTree(stream);
+                }
             default:
-                return getFromFile();
+                File resourceFile = new File(resourcePath.toString());
+                if (!resourceFile.exists()) {
+                    throw new IllegalStateException(String.format("%s does not exist", resourceFile));
+                }
+                if (resourceFile.isDirectory()) {
+                    throw new IllegalStateException(String.format("Expected a file, but found a directory: %s", resourceFile));
+                }
+                return new ObjectMapper().readTree(resourceFile);
         }
-    }
 
-    private JsonNode getFromFile() throws IOException {
-        String pathname = resourcePath.toString();
-        File resourceFile = pathname.startsWith("file://") ? new File(pathname.substring(7)) : new File(pathname);
-        if (!resourceFile.exists()) {
-            throw new IllegalStateException(String.format("%s does not exist", resourceFile));
-        }
-        if (resourceFile.isDirectory()) {
-            throw new IllegalStateException(String.format("Expected a file, but found a directory: %s", resourceFile));
-        }
-        return new ObjectMapper().readTree(resourceFile);
-    }
-
-    private JsonNode getFromS3() throws IOException {
-        S3ObjectInfo s3ObjectInfo = new S3ObjectInfo(resourcePath.toString());
-        AmazonS3 s3 = AmazonS3ClientBuilder.defaultClient();
-        try (InputStream stream  = s3.getObject(s3ObjectInfo.bucket(), s3ObjectInfo.key()).getObjectContent()){
-            return new ObjectMapper().readTree(stream);
-        }
-    }
-
-    private JsonNode getFromHttps() throws IOException {
-        return new ObjectMapper().readTree(resourcePath.toURL());
     }
 
 }
